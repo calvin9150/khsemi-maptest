@@ -1,15 +1,33 @@
+<%@page import="com.camp.model.vo.Camp"%>
+<%@page import="java.util.Vector"%>
+<%@page import="com.camp.model.dao.CampDao"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <title>카카오 지도 목록포함</title>
-    <link rel="stylesheet" type="text/css" href="kakaomapStyle.css" />
-  </head>
-  <body>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+
+	<!-- 1. DB에서 모든 회원의 정보르 가져온다
+		2. table 태그를 이용해서 회원정보를 화면에 출력
+	 -->
+	 
+	 <%
+
+	 	CampDao campDao = new CampDao();
+	 	// 회원들의 정보가 얼마나 저장됐는지 모르니깸에 Vector를 이용해서 데이터 저장
+	 	// Vector의 최상위는 object 클래스.. 이므로 미지정시 object
+		Vector<Camp> vec = campDao.allSelectMember();
+
+	 %>
+
     <div class="map_wrap">
       <div
         id="map"
-        style="width: 100%; height: 100%; position: relative; overflow: hidden"
+        style="width: 90%; height: 90%; position: relative; overflow: hidden"
       ></div>
 
       <div id="menu_wrap" class="bg_white">
@@ -23,7 +41,19 @@
           </div>
         </div>
         <hr />
-        <ul id="placesList"></ul>
+        <ul id="placesList">
+        <% 
+        	for(int i=0; i<vec.size(); i++){
+        		Camp camp = vec.get(i);
+        	
+        %>
+        	<%= vec.get(i).getName() %> <br/>
+        	가격 : <%= vec.get(i).getPrice() %> <br/>
+        	평점 : <%= vec.get(i).getRating() %> <br/>
+        	<%= vec.get(i).getLatitude() %> <br/>
+        	<%= vec.get(i).getLongitude() %> <br/> <div>-------------------</div><br/> 
+        	<%} %> 
+        </ul>
         <div id="pagination"></div>
       </div>
     </div>
@@ -33,9 +63,6 @@
       src="//dapi.kakao.com/v2/maps/sdk.js?appkey=f9e43696a44b958e8d5154bc1b138b81&libraries=services"
     ></script>
     <script>
-      // 마커를 담을 배열입니다
-      const markers = [];
-
       const mapContainer = document.getElementById("map"), // 지도를 표시할 div
         mapOption = {
           center: new kakao.maps.LatLng(37.566826, 126.9786567), // 지도의 중심좌표
@@ -45,26 +72,26 @@
       // 지도를 생성합니다
       const map = new kakao.maps.Map(mapContainer, mapOption);
 
+      // 마커가 표시될 위치입니다
+      const markLocation1 = new kakao.maps.LatLng(
+        37.49015836139608,
+        127.01901917831296
+      );
+
+      // 마커를 생성합니다
+      const markTest1 = new kakao.maps.Marker({
+        position: markLocation1,
+      });
+
+      // 캠핑장 객체 배열
+      const camps = [];
+
+      // 마커를 담을 배열입니다
+      const markers = [markTest1];
+      markTest1.setMap(map);
+
       // 검색 결과 목록이나 마커를 클릭했을 때 장소명을 표출할 인포윈도우를 생성합니다
       const infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
-
-      // 장소검색이 완료됐을 때 호출되는 콜백함수 입니다
-      function placesSearchCB(data, status, pagination) {
-        if (status === kakao.maps.services.Status.OK) {
-          // 정상적으로 검색이 완료됐으면
-          // 검색 목록과 마커를 표출합니다
-          displayPlaces(data);
-
-          // 페이지 번호를 표출합니다
-          displayPagination(pagination);
-        } else if (status === kakao.maps.services.Status.ZERO_RESULT) {
-          alert("검색 결과가 존재하지 않습니다.");
-          return;
-        } else if (status === kakao.maps.services.Status.ERROR) {
-          alert("검색 결과 중 오류가 발생했습니다.");
-          return;
-        }
-      }
 
       // 검색 결과 목록과 마커를 표출하는 함수입니다
       function displayPlaces(places) {
@@ -74,8 +101,8 @@
           bounds = new kakao.maps.LatLngBounds(),
           listStr = "";
 
-        // 검색 결과 목록에 추가된 항목들을 제거합니다
-        removeAllChildNods(listEl);
+        /*         // 검색 결과 목록에 추가된 항목들을 제거합니다
+        removeAllChildNods(listEl); */
 
         for (let i = 0; i < places.length; i++) {
           // 마커를 생성하고 지도에 표시합니다
@@ -95,7 +122,7 @@
               displayInfowindow(marker, title);
             });
 
-            kakao.maps.event.addListener(marker, "mouseout", function () {
+            kakao.maps.event.addListener(marker, "click", function () {
               infowindow.close();
             });
 
@@ -255,6 +282,165 @@
         const resultDiv = document.getElementById("clickLatlng");
         console.log(message);
       });
-    </script>
-  </body>
+
+      console.log(markers);
+      </script>
+      
+      <style>
+      .map_wrap,
+      .map_wrap * {
+        margin: 0;
+        padding: 0;
+        font-family: "Malgun Gothic", dotum, "돋움", sans-serif;
+        font-size: 12px;
+      }
+      .map_wrap a,
+      .map_wrap a:hover,
+      .map_wrap a:active {
+        color: #000;
+        text-decoration: none;
+      }
+      .map_wrap {
+        position: relative;
+        width: 1280px;
+        height: 720px;
+      }
+      #menu_wrap {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 250px;
+        margin: 10px 0 30px 10px;
+        padding: 5px;
+        overflow-y: auto;
+        background: rgba(255, 255, 255, 0.7);
+        z-index: 1;
+        font-size: 12px;
+        border-radius: 10px;
+      }
+      .bg_white {
+        background: #fff;
+      }
+      #menu_wrap hr {
+        display: block;
+        height: 1px;
+        border: 0;
+        border-top: 2px solid #5f5f5f;
+        margin: 3px 0;
+      }
+      #menu_wrap .option {
+        text-align: center;
+        display: none;
+      }
+      #menu_wrap .option p {
+        margin: 10px 0;
+      }
+      #menu_wrap .option button {
+        margin-left: 5px;
+      }
+      #placesList li {
+        list-style: none;
+      }
+      #placesList .item {
+        position: relative;
+        border-bottom: 1px solid #888;
+        overflow: hidden;
+        cursor: pointer;
+        min-height: 65px;
+      }
+      #placesList .item span {
+        display: block;
+        margin-top: 4px;
+      }
+      #placesList .item h5,
+      #placesList .item .info {
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+      #placesList .item .info {
+        padding: 10px 0 10px 55px;
+      }
+      #placesList .info .gray {
+        color: #8a8a8a;
+      }
+      #placesList .info .jibun {
+        padding-left: 26px;
+        background: url(https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/places_jibun.png)
+          no-repeat;
+      }
+      #placesList .info .tel {
+        color: #009900;
+      }
+      #placesList .item .markerbg {
+        float: left;
+        position: absolute;
+        width: 36px;
+        height: 37px;
+        margin: 10px 0 0 10px;
+        background: url(https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_number_blue.png)
+          no-repeat;
+      }
+      #placesList .item .marker_1 {
+        background-position: 0 -10px;
+      }
+      #placesList .item .marker_2 {
+        background-position: 0 -56px;
+      }
+      #placesList .item .marker_3 {
+        background-position: 0 -102px;
+      }
+      #placesList .item .marker_4 {
+        background-position: 0 -148px;
+      }
+      #placesList .item .marker_5 {
+        background-position: 0 -194px;
+      }
+      #placesList .item .marker_6 {
+        background-position: 0 -240px;
+      }
+      #placesList .item .marker_7 {
+        background-position: 0 -286px;
+      }
+      #placesList .item .marker_8 {
+        background-position: 0 -332px;
+      }
+      #placesList .item .marker_9 {
+        background-position: 0 -378px;
+      }
+      #placesList .item .marker_10 {
+        background-position: 0 -423px;
+      }
+      #placesList .item .marker_11 {
+        background-position: 0 -470px;
+      }
+      #placesList .item .marker_12 {
+        background-position: 0 -516px;
+      }
+      #placesList .item .marker_13 {
+        background-position: 0 -562px;
+      }
+      #placesList .item .marker_14 {
+        background-position: 0 -608px;
+      }
+      #placesList .item .marker_15 {
+        background-position: 0 -654px;
+      }
+      #pagination {
+        margin: 10px auto;
+        text-align: center;
+      }
+      #pagination a {
+        display: inline-block;
+        margin-right: 10px;
+      }
+      #pagination .on {
+        font-weight: bold;
+        cursor: default;
+        color: #777;
+      }
+
+      <style>
+</body>
 </html>
